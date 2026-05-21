@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Asset Audit Checklist — Halo Robotics</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@600;700&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f4f0;--white:#fff;--ink:#0f0f0f;--ink2:#3d3d3d;--ink3:#888;
+  --border:#e0dfd8;
+  --green:#15803d;--green-bg:#dcfce7;--green-border:#86efac;
+  --red:#dc2626;--red-bg:#fee2e2;--red-border:#fca5a5;
+  --amber:#d97706;--amber-bg:#fef3c7;--amber-border:#fcd34d;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+
+/* HEADER */
+.header{background:#0f1117;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;position:sticky;top:0;z-index:100}
+.header-left{display:flex;align-items:center;gap:12px}
+.header-title{font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:700;color:#fff}
+.header-sub{font-size:11px;color:#9ca3af;margin-top:2px}
+.header-right{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+
+/* PROGRESS */
+.progress-wrap{background:rgba(255,255,255,.1);border-radius:20px;height:6px;width:140px;overflow:hidden}
+.progress-fill{height:100%;background:#22c55e;border-radius:20px;transition:width .3s}
+.progress-text{font-size:11px;font-weight:700;color:#9ca3af}
+
+.hbtn{padding:7px 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;border:none;transition:all .15s;white-space:nowrap}
+.hbtn-outline{background:transparent;color:#fff;border:1.5px solid rgba(255,255,255,.2)}
+.hbtn-outline:hover{background:rgba(255,255,255,.1)}
+.hbtn-green{background:#22c55e;color:#fff}
+.hbtn-green:hover{background:#16a34a}
+.hbtn-green:disabled{opacity:.4;cursor:not-allowed}
+
+/* STATS */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border-bottom:1px solid var(--border)}
+.stat{background:var(--white);padding:12px 16px;text-align:center}
+.stat-n{font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:700;color:var(--ink)}
+.stat-n.g{color:var(--green)}.stat-n.r{color:var(--red)}.stat-n.a{color:var(--amber)}
+.stat-l{font-size:10px;color:var(--ink3);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-top:2px}
+
+/* FILTER BAR */
+.fbar{background:var(--white);border-bottom:1px solid var(--border);padding:10px 16px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;position:sticky;top:53px;z-index:90}
+.finput{padding:7px 12px;border-radius:8px;border:1.5px solid var(--border);font-size:13px;font-family:'DM Sans',sans-serif;color:var(--ink);background:var(--bg);outline:none;min-width:200px}
+.finput:focus{border-color:#3b82f6}
+.fsel{padding:7px 10px;border-radius:8px;border:1.5px solid var(--border);font-size:12px;font-family:'DM Sans',sans-serif;color:var(--ink);background:var(--bg);outline:none}
+.fsel:focus{border-color:#3b82f6}
+.fchip{padding:5px 12px;border-radius:20px;border:1.5px solid var(--border);background:var(--white);font-size:11px;font-weight:700;cursor:pointer;color:var(--ink3);transition:all .15s}
+.fchip.all{background:var(--ink);color:#fff;border-color:var(--ink)}
+.fchip.checked{background:var(--green-bg);color:var(--green);border-color:var(--green-border)}
+.fchip.unchecked{background:var(--red-bg);color:var(--red);border-color:var(--red-border)}
+.fbar-right{margin-left:auto;display:flex;gap:6px;align-items:center}
+.pginfo{font-size:12px;color:var(--ink3);font-weight:500}
+.pgbtn{padding:5px 12px;border-radius:7px;border:1.5px solid var(--border);background:var(--white);font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif}
+.pgbtn:hover:not(:disabled){background:var(--bg)}
+.pgbtn:disabled{opacity:.3;cursor:not-allowed}
+
+/* SECTION HEADERS */
+.section-head{
+  padding:10px 16px;background:var(--bg);
+  border-bottom:1px solid var(--border);
+  font-size:11px;font-weight:700;color:var(--ink3);
+  text-transform:uppercase;letter-spacing:.08em;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:97px;z-index:80;
+}
+.section-head span{background:var(--border);padding:2px 8px;border-radius:10px;font-size:10px}
+
+/* ASSET ROW */
+.asset-row{
+  background:var(--white);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:0;
+  transition:background .12s;
+}
+.asset-row:hover{background:#fafaf8}
+.asset-row.checked-row{background:var(--green-bg)}
+.asset-row.issue-row{background:var(--red-bg)}
+.asset-row.pending-row{background:var(--amber-bg)}
+
+/* CHECKBOX AREA */
+.check-area{
+  width:56px;min-width:56px;height:60px;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;border-right:1px solid var(--border);
+  transition:background .12s;flex-shrink:0;
+}
+.check-area:hover{background:var(--green-bg)}
+.check-area.checked{background:var(--green-bg)}
+.check-box{
+  width:24px;height:24px;border-radius:6px;
+  border:2px solid var(--border);background:var(--white);
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;transition:all .15s;
+}
+.check-box.checked{background:var(--green);border-color:var(--green);color:#fff}
+
+/* ASSET INFO */
+.asset-info{flex:1;padding:10px 14px;min-width:0;cursor:pointer}
+.asset-name{font-size:13px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px}
+.asset-tags{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.tag{display:inline-flex;padding:2px 7px;border-radius:5px;font-size:10px;font-weight:700;white-space:nowrap}
+.t-sec{background:var(--bg);color:var(--ink3)}
+.t-team{background:#ede9fe;color:#4c1d95}
+.t-good{background:var(--green-bg);color:var(--green)}
+.t-bad{background:var(--red-bg);color:var(--red)}
+.t-amber{background:var(--amber-bg);color:var(--amber)}
+.t-gray{background:var(--bg);color:var(--ink3)}
+.asset-loc{font-size:11px;color:var(--ink3);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* STATUS BUTTONS */
+.status-area{display:flex;flex-direction:column;gap:4px;padding:10px 12px;flex-shrink:0;border-left:1px solid var(--border)}
+.st-btn{
+  width:70px;padding:4px 0;border-radius:6px;border:1.5px solid var(--border);
+  background:var(--white);font-size:10px;font-weight:700;cursor:pointer;
+  font-family:'DM Sans',sans-serif;text-align:center;transition:all .15s;color:var(--ink3);
+}
+.st-btn:hover.ok-st{background:var(--green-bg);border-color:var(--green-border);color:var(--green)}
+.st-btn:hover.is-st{background:var(--red-bg);border-color:var(--red-border);color:var(--red)}
+.st-btn:hover.pe-st{background:var(--amber-bg);border-color:var(--amber-border);color:var(--amber)}
+.st-btn.ok-st.active{background:var(--green-bg);border-color:var(--green);color:var(--green)}
+.st-btn.is-st.active{background:var(--red-bg);border-color:var(--red);color:var(--red)}
+.st-btn.pe-st.active{background:var(--amber-bg);border-color:var(--amber);color:var(--amber)}
+
+/* EXPAND DETAIL */
+.expand-row{
+  display:none;background:var(--white);border-bottom:1.5px solid var(--border);
+  padding:12px 16px;
+}
+.expand-row.open{display:block}
+.detail-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px 16px;margin-bottom:10px}
+@media(max-width:600px){.detail-grid{grid-template-columns:repeat(2,1fr)}}
+.df{display:flex;flex-direction:column;gap:2px}
+.dl{font-size:10px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.05em}
+.dv{font-size:12px;color:var(--ink);font-weight:500}
+.dv.empty{color:var(--ink3);font-style:italic}
+.dv a{color:#2563eb;font-size:11px;text-decoration:none}
+.dv a:hover{text-decoration:underline}
+
+.note-row{display:flex;gap:8px;align-items:flex-end;margin-top:8px}
+.note-inp{
+  flex:1;padding:7px 10px;border-radius:8px;border:1.5px solid var(--border);
+  font-size:12px;font-family:'DM Sans',sans-serif;color:var(--ink);
+  background:var(--bg);outline:none;resize:none;min-height:54px;transition:border-color .15s;
+}
+.note-inp:focus{border-color:#3b82f6}
+.note-inp::placeholder{color:var(--ink3)}
+
+/* EMPTY/LOADING */
+.state-msg{text-align:center;padding:4rem;color:var(--ink3);font-size:14px}
+.spin{display:inline-block;width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--ink);border-radius:50%;animation:spin .7s linear infinite;margin-right:8px;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* TOAST */
+.toast{
+  position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(80px);
+  background:var(--ink);color:#fff;padding:9px 18px;border-radius:9px;
+  font-size:13px;font-weight:600;z-index:9999;
+  transition:transform .25s cubic-bezier(.34,1.56,.64,1);pointer-events:none;
+}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast.g{background:var(--green)}
+
+/* MODAL untuk export/update */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:flex;align-items:center;justify-content:center;display:none}
+.modal-overlay.open{display:flex}
+.modal{background:var(--white);border-radius:16px;padding:24px;width:480px;max-width:calc(100vw - 32px);max-height:80vh;overflow-y:auto}
+.modal h2{font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:700;margin-bottom:4px}
+.modal p{font-size:13px;color:var(--ink3);margin-bottom:16px}
+.modal-btns{display:flex;gap:8px;justify-content:flex-end;margin-top:20px}
+.modal-btn{padding:8px 18px;border-radius:8px;border:none;font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif}
+.modal-btn-outline{background:transparent;border:1.5px solid var(--border);color:var(--ink)}
+.modal-btn-primary{background:var(--ink);color:#fff}
+.modal-btn-green{background:var(--green);color:#fff}
+.result-list{display:flex;flex-direction:column;gap:6px;margin-top:12px;max-height:300px;overflow-y:auto}
+.result-item{padding:8px 12px;border-radius:8px;font-size:12px;font-weight:600}
+.result-item.g{background:var(--green-bg);color:var(--green)}
+.result-item.r{background:var(--red-bg);color:var(--red)}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <div>
+      <div class="header-title">Drone Asset Audit Checklist</div>
+      <div class="header-sub" id="hdr-sub">Memuat data...</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div style="display:flex;flex-direction:column;gap:3px;align-items:flex-end">
+      <div class="progress-text" id="prog-text">0 / 0</div>
+      <div class="progress-wrap"><div class="progress-fill" id="prog-fill" style="width:0%"></div></div>
+    </div>
+    <button class="hbtn hbtn-outline" onclick="exportCSV()">Export CSV</button>
+    <button class="hbtn hbtn-green" id="update-sheet-btn" onclick="openUpdateModal()" disabled>Update ke Sheet</button>
+  </div>
+</div>
+
+<!-- STATS -->
+<div class="stats">
+  <div class="stat"><div class="stat-n" id="s-total">—</div><div class="stat-l">Total</div></div>
+  <div class="stat"><div class="stat-n g" id="s-ok">0</div><div class="stat-l">Sesuai ✓</div></div>
+  <div class="stat"><div class="stat-n r" id="s-issue">0</div><div class="stat-l">Ada Masalah ✗</div></div>
+  <div class="stat"><div class="stat-n a" id="s-uncheck">—</div><div class="stat-l">Belum Dicek</div></div>
+</div>
+
+<!-- FILTER BAR -->
+<div class="fbar">
+  <input class="finput" id="srch" placeholder="Cari nama, kode, lokasi..." oninput="renderList()">
+  <select class="fsel" id="f-sec" onchange="renderList()"><option value="">Semua Kategori</option></select>
+  <select class="fsel" id="f-team" onchange="renderList()"><option value="">Semua Tim</option></select>
+  <button class="fchip all" id="fc-all" onclick="setFilter('all')">Semua</button>
+  <button class="fchip" id="fc-checked" onclick="setFilter('checked')">✓ Sudah</button>
+  <button class="fchip" id="fc-unchecked" onclick="setFilter('unchecked')">○ Belum</button>
+  <div class="fbar-right">
+    <span class="pginfo" id="pginfo"></span>
+    <button class="pgbtn" id="pg-prev" onclick="changePage(-1)" disabled>←</button>
+    <button class="pgbtn" id="pg-next" onclick="changePage(1)" disabled>→</button>
+  </div>
+</div>
+
+<!-- LIST -->
+<div id="list-wrap">
+  <div class="state-msg"><span class="spin"></span>Memuat 660 asset dari Google Sheet...</div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- UPDATE MODAL -->
+<div class="modal-overlay" id="update-modal">
+  <div class="modal">
+    <h2>Update ke Google Sheet</h2>
+    <p>Hasil audit akan diupdate ke kolom <b>Audit Status</b> dan <b>Catatan Audit</b> di Google Sheet.</p>
+    <div id="update-summary" class="result-list"></div>
+    <div class="modal-btns">
+      <button class="modal-btn modal-btn-outline" onclick="closeModal()">Batal</button>
+      <button class="modal-btn modal-btn-green" onclick="doUpdateSheet()">Update Sekarang</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SHEET_ID  = '1XdTzyGl-Y96DZduM-vlEtczy3JNzS3cUO-6yuSWOKbE';
+const PER_PAGE  = 30;
+
+let DATA    = [];
+let checks  = {}; // {id: {checked:bool, status:'ok'|'issue'|'pending', note:''}}
+let filter  = 'all';
+let page    = 1;
+
+// Load saved
+const saved = localStorage.getItem('halo_checklist');
+if (saved) try { checks = JSON.parse(saved); } catch(e){}
+
+// Init
+loadSheet();
+
+async function loadSheet() {
+  try {
+    const res  = await fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Asset%20Master&t=${Date.now()}`);
+    if (!res.ok) throw new Error('HTTP '+res.status);
+    const text = await res.text();
+    DATA = parseCSV(text);
+    if (!DATA.length) throw new Error('Sheet kosong');
+
+    // Populate selects
+    const secs  = [...new Set(DATA.map(d=>d.Section).filter(Boolean))].sort();
+    const teams = [...new Set(DATA.map(d=>d.Team).filter(Boolean))].sort();
+    const sEl = document.getElementById('f-sec');
+    secs.forEach(s=>{const o=document.createElement('option');o.value=o.textContent=s;sEl.appendChild(o);});
+    const tEl = document.getElementById('f-team');
+    teams.forEach(t=>{const o=document.createElement('option');o.value=o.textContent=t;tEl.appendChild(o);});
+
+    document.getElementById('hdr-sub').textContent = `${DATA.length} asset · Halo Robotics OPS · ${new Date().toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})}`;
+    document.getElementById('update-sheet-btn').disabled = false;
+
+    updateStats();
+    renderList();
+  } catch(e) {
+    document.getElementById('list-wrap').innerHTML =
+      `<div class="state-msg" style="color:#dc2626">Gagal memuat: ${e.message}</div>`;
+  }
+}
+
+function parseCSV(text){
+  const lines=text.split('\n'),hdrs=parseLine(lines[0]),rows=[];
+  for(let i=1;i<lines.length;i++){
+    if(!lines[i].trim())continue;
+    const v=parseLine(lines[i]);if(!v[2])continue;
+    const o={};hdrs.forEach((h,j)=>o[cl(h)]=cl(v[j]||''));rows.push(o);
+  }
+  return rows;
+}
+function parseLine(l){
+  const r=[],re=/("(?:[^"]|"")*"|[^,]*)(,|$)/g;let m;
+  while((m=re.exec(l))!==null){r.push(m[1].startsWith('"')?m[1].slice(1,-1).replace(/""/g,'"'):m[1]);if(m[2]==='')break;}
+  return r;
+}
+function cl(v){return(v||'').replace(/^"|"$/g,'').trim();}
+function key(d){return d['Item ID']||d['Internal Code']||d['Asset Name'];}
+
+function updateStats(){
+  const total   = DATA.length;
+  const ok      = Object.values(checks).filter(c=>c.status==='ok').length;
+  const issue   = Object.values(checks).filter(c=>c.status==='issue').length;
+  const checked = Object.values(checks).filter(c=>c.checked).length;
+
+  document.getElementById('s-total').textContent   = total;
+  document.getElementById('s-ok').textContent      = ok;
+  document.getElementById('s-issue').textContent   = issue;
+  document.getElementById('s-uncheck').textContent = total - checked;
+
+  const pct = total > 0 ? Math.round(checked/total*100) : 0;
+  document.getElementById('prog-fill').style.width = pct+'%';
+  document.getElementById('prog-text').textContent = `${checked} / ${total} (${pct}%)`;
+}
+
+function save(){
+  localStorage.setItem('halo_checklist', JSON.stringify(checks));
+  updateStats();
+}
+
+function setFilter(f){
+  filter = f;
+  ['all','checked','unchecked'].forEach(x=>{
+    document.getElementById('fc-'+x).className = 'fchip'+(f===x?' '+f:'');
+  });
+  page=1; renderList();
+}
+
+function getFiltered(){
+  const srch  = document.getElementById('srch').value.toLowerCase();
+  const fSec  = document.getElementById('f-sec').value;
+  const fTeam = document.getElementById('f-team').value;
+  return DATA.filter(d=>{
+    if(fSec  && d.Section!==fSec)  return false;
+    if(fTeam && d.Team!==fTeam)    return false;
+    if(srch && !['Asset Name','Internal Code','Current Placement','PIC']
+       .some(k=>(d[k]||'').toLowerCase().includes(srch))) return false;
+    const c = checks[key(d)];
+    if(filter==='checked'   && !c?.checked)  return false;
+    if(filter==='unchecked' && c?.checked)   return false;
+    return true;
+  });
+}
+
+function changePage(d){page+=d;renderList();}
+
+function renderList(){
+  const filtered = getFiltered();
+  const total    = filtered.length;
+  const start    = (page-1)*PER_PAGE;
+  const end      = Math.min(start+PER_PAGE, total);
+  const slice    = filtered.slice(start,end);
+
+  document.getElementById('pginfo').textContent = total?`${start+1}–${end} / ${total}`:'0 hasil';
+  document.getElementById('pg-prev').disabled = page<=1;
+  document.getElementById('pg-next').disabled = end>=total;
+
+  if(!slice.length){
+    document.getElementById('list-wrap').innerHTML = '<div class="state-msg">Tidak ada asset yang cocok.</div>';
+    return;
+  }
+
+  // Group by section
+  let html = '';
+  let lastSec = null;
+  slice.forEach(d => {
+    if(d.Section !== lastSec){
+      const secCount = filtered.filter(x=>x.Section===d.Section).length;
+      const secChecked = filtered.filter(x=>x.Section===d.Section && checks[key(x)]?.checked).length;
+      html += `<div class="section-head">${esc(d.Section||'Lainnya')}<span>${secChecked}/${secCount} dicek</span></div>`;
+      lastSec = d.Section;
+    }
+    html += rowHTML(d);
+  });
+
+  document.getElementById('list-wrap').innerHTML = html;
+}
+
+function rowHTML(d){
+  const id  = key(d);
+  const c   = checks[id];
+  const chk = c?.checked;
+  const st  = c?.status;
+  const note= c?.note||'';
+  const rowCls = chk ? (st==='issue'?'issue-row':st==='pending'?'pending-row':'checked-row') : '';
+
+  const hTag = h => {
+    if(!h) return '';
+    if(h==='Good') return `<span class="tag t-good">${h}</span>`;
+    if(h.includes('Out')) return `<span class="tag t-bad">${h}</span>`;
+    if(h.includes('Require')) return `<span class="tag t-amber">${h}</span>`;
+    return `<span class="tag t-gray">${h}</span>`;
+  };
+
+  return `
+<div class="asset-row ${rowCls}" id="row-${esc(id)}">
+  <div class="check-area ${chk?'checked':''}" onclick="toggleCheck('${esc(id)}')" title="Centang untuk tandai sudah dicek">
+    <div class="check-box ${chk?'checked':''}">${chk?'✓':''}</div>
+  </div>
+  <div class="asset-info" onclick="toggleExpand('${esc(id)}')">
+    <div class="asset-name">${esc(d['Asset Name'])}</div>
+    <div class="asset-tags">
+      <span class="tag t-sec">${esc(d.Section||'—')}</span>
+      <span class="tag t-team">${esc(d.Team||'—')}</span>
+      ${hTag(d['Health Status'])}
+      ${d['Internal Code']?`<span style="font-size:10px;color:var(--ink3);font-weight:500">${esc(d['Internal Code'])}</span>`:''}
+    </div>
+    <div class="asset-loc">📍 ${esc(d['Current Placement']||'—')} &nbsp;·&nbsp; 👤 ${esc(d.PIC||'—')}</div>
+  </div>
+  <div class="status-area">
+    <button class="st-btn ok-st ${st==='ok'?'active':''}" onclick="setStatus('${esc(id)}','ok')">✓ Sesuai</button>
+    <button class="st-btn is-st ${st==='issue'?'active':''}" onclick="setStatus('${esc(id)}','issue')">✗ Masalah</button>
+    <button class="st-btn pe-st ${st==='pending'?'active':''}" onclick="setStatus('${esc(id)}','pending')">⏳ Pending</button>
+  </div>
+</div>
+<div class="expand-row" id="exp-${esc(id)}">
+  <div class="detail-grid">
+    <div class="df"><div class="dl">Serial / License</div><div class="dv ${d['Serial Number / License']?'':'empty'}">${esc(d['Serial Number / License']||'—')}</div></div>
+    <div class="df"><div class="dl">Activation Date</div><div class="dv">${esc(d['Activation Date']||'—')}</div></div>
+    <div class="df"><div class="dl">Hour / Cycle</div><div class="dv">${esc(d['Hour / Cycle']||'—')}</div></div>
+    <div class="df"><div class="dl">Firmware</div><div class="dv ${d.Firmware?'':'empty'}">${esc(d.Firmware||'—')}</div></div>
+    <div class="df"><div class="dl">Next Maintenance</div><div class="dv">${esc(d['Next Maintenance']||'—')}</div></div>
+    <div class="df"><div class="dl">FCC Status</div><div class="dv">${esc(d['FCC Status']||'—')}</div></div>
+    <div class="df"><div class="dl">Sertifikat</div><div class="dv">${d.Sertifikat?`<a href="${d.Sertifikat}" target="_blank">Lihat →</a>`:'<span class="empty">—</span>'}</div></div>
+    <div class="df"><div class="dl">Maintenance Record</div><div class="dv">${d['Maintenance Record Link']?`<a href="${d['Maintenance Record Link']}" target="_blank">Lihat →</a>`:'<span class="empty">—</span>'}</div></div>
+    <div class="df"><div class="dl">Item ID Monday</div><div class="dv" style="font-size:11px;font-family:monospace">${esc(d['Item ID']||'—')}</div></div>
+  </div>
+  <div class="note-row">
+    <textarea class="note-inp" id="note-${esc(id)}" placeholder="Catatan audit (opsional)..."
+      onchange="saveNote('${esc(id)}',this.value)">${esc(note)}</textarea>
+  </div>
+</div>`;
+}
+
+function toggleCheck(id){
+  if(!checks[id]) checks[id]={checked:false,status:'',note:''};
+  checks[id].checked = !checks[id].checked;
+  if(checks[id].checked && !checks[id].status) checks[id].status='ok';
+  if(!checks[id].checked) checks[id].status='';
+  save();
+  // Update DOM
+  const row = document.getElementById('row-'+id);
+  const c   = checks[id];
+  if(row){
+    row.className = 'asset-row' + (c.checked?(c.status==='issue'?' issue-row':c.status==='pending'?' pending-row':' checked-row'):'');
+    const ca  = row.querySelector('.check-area');
+    const cb  = row.querySelector('.check-box');
+    if(ca) ca.className='check-area'+(c.checked?' checked':'');
+    if(cb){cb.className='check-box'+(c.checked?' checked':'');cb.textContent=c.checked?'✓':'';}
+    // Update status btns
+    ['ok','issue','pending'].forEach(s=>{
+      const btn=row.querySelector('.'+s[0]+(s==='ok'?'k':s==='issue'?'s':'e')+'-st');
+    });
+    row.querySelectorAll('.st-btn').forEach(b=>b.classList.remove('active'));
+    const stMap={'ok':'.ok-st','issue':'.is-st','pending':'.pe-st'};
+    if(c.status && stMap[c.status]) row.querySelector(stMap[c.status])?.classList.add('active');
+  }
+  showToast(c.checked?'✓ Dicek!':'○ Dikosongkan');
+  document.getElementById('update-sheet-btn').disabled=false;
+}
+
+function setStatus(id,status){
+  if(!checks[id]) checks[id]={checked:true,status:'',note:''};
+  checks[id].status = checks[id].status===status?'ok':status;
+  checks[id].checked = true;
+  save();
+  // Update row color
+  const row = document.getElementById('row-'+id);
+  if(row){
+    const c=checks[id];
+    row.className='asset-row'+(c.checked?(c.status==='issue'?' issue-row':c.status==='pending'?' pending-row':' checked-row'):'');
+    row.querySelectorAll('.st-btn').forEach(b=>b.classList.remove('active'));
+    const stMap={'ok':'.ok-st','issue':'.is-st','pending':'.pe-st'};
+    if(c.status && stMap[c.status]) row.querySelector(stMap[c.status])?.classList.add('active');
+    const ca=row.querySelector('.check-area');const cb=row.querySelector('.check-box');
+    if(ca)ca.className='check-area checked';if(cb){cb.className='check-box checked';cb.textContent='✓';}
+  }
+  const labels={ok:'✓ Ditandai Sesuai',issue:'✗ Ada Masalah',pending:'⏳ Perlu Cek Lagi'};
+  showToast(labels[checks[id].status]||'Status diperbarui');
+  document.getElementById('update-sheet-btn').disabled=false;
+}
+
+function saveNote(id,note){
+  if(!checks[id]) checks[id]={checked:false,status:'',note:''};
+  checks[id].note=note;save();
+}
+
+function toggleExpand(id){
+  const exp=document.getElementById('exp-'+id);
+  if(exp) exp.classList.toggle('open');
+}
+
+// ── EXPORT CSV ────────────────────────────────────────────────
+function exportCSV(){
+  const rows=[['No','Asset Name','Section','Team','PIC','Internal Code','Lokasi','Health Status','Next Maintenance','Item ID Monday','Status Checklist','Catatan','Tanggal']];
+  DATA.forEach(d=>{
+    const id=key(d);const c=checks[id];
+    rows.push([
+      d.No,d['Asset Name'],d.Section,d.Team,d.PIC,d['Internal Code'],
+      d['Current Placement'],d['Health Status'],d['Next Maintenance'],d['Item ID'],
+      c?.checked?(c.status||'checked'):'belum dicek',
+      c?.note||'',
+      c?.checked?new Date().toLocaleDateString('id-ID'):''
+    ]);
+  });
+  const csv=rows.map(r=>r.map(v=>`"${(v||'').toString().replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);
+  a.download=`Checklist_Audit_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  showToast('CSV berhasil diexport','g');
+}
+
+// ── UPDATE MODAL ──────────────────────────────────────────────
+function openUpdateModal(){
+  const checked = DATA.filter(d=>checks[key(d)]?.checked);
+  const el = document.getElementById('update-summary');
+  el.innerHTML = `
+    <div class="result-item g">✓ Sesuai: ${checked.filter(d=>checks[key(d)].status==='ok').length} asset</div>
+    <div class="result-item r">✗ Ada Masalah: ${checked.filter(d=>checks[key(d)].status==='issue').length} asset</div>
+    <div class="result-item" style="background:var(--amber-bg);color:var(--amber)">⏳ Pending: ${checked.filter(d=>checks[key(d)].status==='pending').length} asset</div>
+    <div style="font-size:12px;color:var(--ink3);margin-top:8px">Total ${checked.length} dari ${DATA.length} asset sudah dicek akan diupdate.<br><br>
+    <b>Cara update ke Sheet:</b> Download CSV di atas, lalu import ke Google Sheet tab baru. Atau kamu bisa update manual berdasarkan hasil CSV tersebut.</div>`;
+  document.getElementById('update-modal').classList.add('open');
+}
+function closeModal(){document.getElementById('update-modal').classList.remove('open');}
+function doUpdateSheet(){
+  exportCSV();
+  closeModal();
+  showToast('CSV diexport — import ke Google Sheet!','g');
+}
+
+function showToast(msg,type=''){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.className='toast'+(type?' '+type:'');
+  t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);
+}
+function esc(s){return(s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');}
+</script>
+</body>
+</html>
