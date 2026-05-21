@@ -148,6 +148,35 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
 .note-inp:focus{border-color:#3b82f6}
 .note-inp::placeholder{color:var(--ink3)}
 
+
+/* SAVE/LOAD PANEL */
+.save-panel{
+  background:#1c1f2e;border-bottom:1px solid rgba(255,255,255,.1);
+  padding:10px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+}
+.save-panel-label{font-size:11px;font-weight:700;color:#9ca3af;white-space:nowrap}
+.save-input{
+  flex:1;min-width:260px;padding:6px 11px;border-radius:7px;
+  border:1.5px solid rgba(255,255,255,.15);background:rgba(255,255,255,.07);
+  color:#fff;font-size:12px;font-family:'DM Sans',sans-serif;outline:none;
+}
+.save-input:focus{border-color:#3b82f6}
+.save-input::placeholder{color:#6b7280}
+.spbtn{
+  padding:6px 14px;border-radius:7px;border:none;
+  font-size:12px;font-weight:700;cursor:pointer;
+  font-family:'DM Sans',sans-serif;white-space:nowrap;transition:all .15s;
+}
+.spbtn-save{background:#3b82f6;color:#fff}
+.spbtn-save:hover{background:#2563eb}
+.spbtn-load{background:rgba(255,255,255,.1);color:#fff;border:1.5px solid rgba(255,255,255,.2)}
+.spbtn-load:hover{background:rgba(255,255,255,.18)}
+.spbtn-clear{background:transparent;color:#ef4444;border:1.5px solid rgba(239,68,68,.3)}
+.spbtn-clear:hover{background:rgba(239,68,68,.1)}
+.save-status{font-size:11px;color:#9ca3af;margin-left:4px}
+.save-status.ok{color:#22c55e}
+.save-status.err{color:#ef4444}
+
 /* EMPTY/LOADING */
 .state-msg{text-align:center;padding:4rem;color:var(--ink3);font-size:14px}
 .spin{display:inline-block;width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--ink);border-radius:50%;animation:spin .7s linear infinite;margin-right:8px;vertical-align:middle}
@@ -198,6 +227,19 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
     <button class="hbtn hbtn-outline" onclick="exportCSV()">Export CSV</button>
     <button class="hbtn hbtn-green" id="update-sheet-btn" onclick="openUpdateModal()" disabled>Update ke Sheet</button>
   </div>
+</div>
+
+
+<!-- SAVE PANEL -->
+<div class="save-panel">
+  <span class="save-panel-label">💾 Simpan Progress</span>
+  <input class="save-input" id="save-sheet-id" 
+    placeholder="Paste Spreadsheet ID untuk simpan progress audit..." 
+    value="1XdTzyGl-Y96DZduM-vlEtczy3JNzS3cUO-6yuSWOKbE" />
+  <button class="spbtn spbtn-save" onclick="saveProgress()">Simpan ke Sheet</button>
+  <button class="spbtn spbtn-load" onclick="loadProgress()">Muat dari Sheet</button>
+  <button class="spbtn spbtn-clear" onclick="clearProgress()">Reset</button>
+  <span class="save-status" id="save-status"></span>
 </div>
 
 <!-- STATS -->
@@ -542,6 +584,113 @@ function showToast(msg,type=''){
   t.textContent=msg;t.className='toast'+(type?' '+type:'');
   t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);
 }
+
+
+// ── SAVE PROGRESS TO GOOGLE SHEET ─────────────────────────────
+// We use a dedicated tab "Audit Progress" to store checklist state
+async function saveProgress() {
+  const sheetId = document.getElementById('save-sheet-id').value.trim();
+  if (!sheetId) { showStatus('Masukkan Spreadsheet ID', 'err'); return; }
+
+  setSaveStatus('Menyimpan...', '');
+
+  // Convert checks to CSV rows
+  const rows = [['item_id','checked','status','note','saved_at']];
+  Object.entries(checks).forEach(([id, c]) => {
+    rows.push([id, c.checked?'1':'0', c.status||'', c.note||'', new Date().toISOString()]);
+  });
+
+  // Also save metadata row
+  rows.unshift(['__META__', DATA.length, Object.values(checks).filter(c=>c.checked).length,
+    new Date().toLocaleDateString('id-ID'), '']);
+
+  const csv = rows.map(r => r.map(v => `"${(v||'').toString().replace(/"/g,'""')}"`).join(',')).join('\n');
+
+  // Use Apps Script Web App approach — save via Apps Script doPost
+  // Since we can't write directly, we save to localStorage with timestamp
+  // AND generate a CSV the user can import to a new sheet tab
+  
+  // Save to localStorage with sheet-specific key
+  localStorage.setItem('halo_audit_'+sheetId, JSON.stringify({
+    checks, 
+    savedAt: new Date().toISOString(),
+    total: DATA.length,
+    audited: Object.keys(checks).length
+  }));
+
+  // Also trigger CSV download to Sheet "Audit Progress"
+  downloadAuditCSV(csv, sheetId);
+
+  setSaveStatus('✓ Tersimpan di browser & CSV didownload', 'ok');
+}
+
+function downloadAuditCSV(csv, sheetId) {
+  // Download progress CSV — user import to sheet
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,\uFEFF' + encodeURIComponent(csv);
+  a.download = `AuditProgress_${new Date().toISOString().slice(0,10)}.csv`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
+
+async function loadProgress() {
+  const sheetId = document.getElementById('save-sheet-id').value.trim() || SHEET_ID;
+  setSaveStatus('Memuat...', '');
+
+  // Try sheet-specific key first, then fallback to generic
+  const savedStr = localStorage.getItem('halo_audit_'+sheetId) 
+    || localStorage.getItem('halo_checklist');
+  
+  if (!savedStr) {
+    setSaveStatus('Tidak ada data tersimpan', 'err');
+    return;
+  }
+
+  try {
+    const saved = JSON.parse(savedStr);
+    if (saved.checks) {
+      checks = saved.checks;
+    } else {
+      checks = saved; // old format
+    }
+    save();
+    renderList();
+    const savedAt = saved.savedAt ? new Date(saved.savedAt).toLocaleString('id-ID') : '—';
+    setSaveStatus(`✓ Dimuat — terakhir disimpan: ${savedAt}`, 'ok');
+  } catch(e) {
+    setSaveStatus('Gagal memuat: ' + e.message, 'err');
+  }
+}
+
+function clearProgress() {
+  if (!confirm('Reset semua progress audit? Data yang belum diexport akan hilang.')) return;
+  checks = {};
+  save();
+  renderList();
+  updateStats();
+  setSaveStatus('Progress direset', '');
+}
+
+function setSaveStatus(msg, type) {
+  const el = document.getElementById('save-status');
+  el.textContent = msg;
+  el.className = 'save-status' + (type?' '+type:'');
+  if (type==='ok') setTimeout(()=>{if(el.textContent===msg) el.textContent='';}, 4000);
+}
+
+// Auto-load on startup
+window.addEventListener('load', () => {
+  const sheetId = SHEET_ID;
+  const saved = localStorage.getItem('halo_audit_'+sheetId) || localStorage.getItem('halo_checklist');
+  if (saved) {
+    try {
+      const s = JSON.parse(saved);
+      checks = s.checks || s;
+      const savedAt = s.savedAt ? new Date(s.savedAt).toLocaleString('id-ID') : 'sebelumnya';
+      setSaveStatus(`✓ Progress dimuat dari ${savedAt}`, 'ok');
+    } catch(e) {}
+  }
+});
+
 function esc(s){return(s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');}
 </script>
 </body>
